@@ -140,16 +140,18 @@ function init() {
 
 function print() {
     console.log('');
+    const bg = [0, 103, 41, 42, 43, 44, 45, 46, 47, 107];
     for (let i=0; i<ROWS; i++) {
         let line = '';
         for (let j=0; j<COLS; j++) {
             let cell = board[i][j];
             if (cell == null) { // should not happen
-                line += '!';
+                line += '! ';
+            } else if (cell.id === ' ') {
+                line += '  ';
             } else {
-                line += cell.id;
+                line += '\x1b[' + bg[cell.id] + 'm' + cell.id + ' \x1b[49m';
             }
-            line += ' ';
         }
         console.log(line);
     }
