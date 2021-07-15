@@ -6,7 +6,9 @@ const pieces = [];
 
 const rotate = m => m[0].map((val, index) => m.map(row => row[index]).reverse());
 const transpose =  m => m[0].map((x,i) => m.map(x => x[i]));
-const write = process.stdout.write.bind(process.stdout);
+
+let count = 0;
+let solutions = 0;
 
 class Piece {
     // shape0 is a 2d-array of 0/1 describing one orientation of the piece
@@ -35,26 +37,17 @@ class Piece {
         return this.shapes[this.shapeId];
     }
 
-    useNextShape() {
-        if (this.onboard) {
-            console.log('Cannot change shape while it is on board!');
-            return;
-        }
-        this.shapeId = (this.shapeId + 1) % 8;
-    }
-
-    reset() {
-        if (this.onboard) {
-            console.log('Cannot reset shape while it is on board!');
-            return;
-        }
-        this.shapeId = 0;
-        this.row = -1;
-        this.col = -1;
-    }
-
-    tryPutOnBoard() {
+    tryPutOnBoard(row, col) {
+        // shift left to occupy the position
         let shape = this.currentShape();
+        for (let i=0; i<shape[0].length; i++) {
+            if (shape[0][i]) {
+                col -= i;
+                break;
+            }
+        }
+        this.row = row;
+        this.col = col;
         let width = shape[0].length;
         let height = shape.length;
         // check if overflow
@@ -101,25 +94,6 @@ class Piece {
 
         this.onboard = false;
     }
-
-    findNextPosition() {
-        let pos = this.row < 0 ? -1 : (this.row * COLS + this.col);
-        // write(`(${this.row},${this.col},${this.shapeId})>`);
-        do {
-            pos++;
-            if (pos >= COLS * ROWS) {
-                if (this.shapeId === 7) {
-                    return false;
-                }
-                this.useNextShape();
-                pos = 0;
-            }
-            this.row = Math.floor(pos / COLS);
-            this.col = pos % COLS;
-        } while (!this.tryPutOnBoard());
-        // write(`(${this.row},${this.col},${this.shapeId}) `);
-        return true;
-    }
 }
 
 function init() {
@@ -164,33 +138,6 @@ function init() {
     ]));
 }
 
-function solve() {
-    let usedPieces = [];
-    let count = 0;
-    while (pieces.length > 0) {
-        let piece = pieces.pop();
-        // write(`${piece.id}`);
-        if (!piece.findNextPosition()) {
-            // write('× ');
-            piece.reset();
-            pieces.push(piece);
-            if (usedPieces.length === 0) {
-                console.log('Error, no solution!');
-                return false;
-            }
-            piece = usedPieces.pop();
-            piece.removeFromBoard();
-            pieces.push(piece);
-        } else {
-            // write('✔ ');
-            usedPieces.push(piece);
-            count++;
-        }
-    }
-    console.log(`Total count: ${count}.`);
-    return true;
-}
-
 function print() {
     console.log('');
     for (let i=0; i<ROWS; i++) {
@@ -206,6 +153,37 @@ function print() {
         }
         console.log(line);
     }
+}
+
+function solve(pos) {
+    if (pos >= ROWS * COLS) {
+        solutions++;
+        print();
+        return true;
+    }
+    let row = Math.floor(pos / COLS);
+    let col = pos % COLS;
+
+    // if occupied, look for next slot
+    if (board[row][col]) {
+        return solve(pos + 1);
+    }
+
+    // find one unused piece that will fit
+    for (let i=0; i<pieces.length; i++) {
+        let piece = pieces[i];
+        if (piece.onboard) {
+            continue;
+        }
+        for (piece.shapeId = 0; piece.shapeId<8; piece.shapeId++) {
+            count++;
+            if (piece.tryPutOnBoard(row, col)) {
+                solve(pos+1);
+                piece.removeFromBoard();
+            }
+        }
+    }
+    return false;
 }
 
 function input() {
@@ -252,9 +230,8 @@ function input() {
 function main() {
     init();
     input();
-    if (solve()) {
-        print();
-    }
+    solve(0);
+    console.log(`Total tries: ${count}, solutions: ${solutions}.`);
 }
 
 main();

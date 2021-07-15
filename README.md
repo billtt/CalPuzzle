@@ -10,4 +10,4 @@ node CalPuzzle.js YYYY/MM/DD
 Sample(to get result in the picture):\
 node CalPuzzle.js 2021/07/15
 
-The algorithm used by this program is simply brute-force, so it might take a few minutes to get the result.
+The algorithm used by this program is simply brute-force by iterating over the board.
