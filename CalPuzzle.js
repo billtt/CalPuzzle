@@ -9,6 +9,7 @@ const transpose =  m => m[0].map((x,i) => m.map(x => x[i]));
 
 let count = 0;
 let solutions = 0;
+let printPieces = 9;
 
 class Piece {
     // shape0 is a 2d-array of 0/1 describing one orientation of the piece
@@ -141,13 +142,21 @@ function init() {
 function print() {
     console.log('');
     const bg = [0, 103, 41, 42, 43, 44, 45, 46, 47, 107];
+    const pieces = new Set();
     for (let i=0; i<ROWS; i++) {
         let line = '';
         for (let j=0; j<COLS; j++) {
             let cell = board[i][j];
+            let output = false;
+            if (pieces.has(cell.id)) {
+                output = true;
+            } else if (pieces.size < printPieces) {
+                pieces.add(cell.id);
+                output = true;
+            }
             if (cell == null) { // should not happen
                 line += '! ';
-            } else if (cell.id === ' ') {
+            } else if (cell.id === ' ' || !output) {
                 line += '  ';
             } else {
                 line += '\x1b[' + bg[cell.id] + 'm' + cell.id + ' \x1b[49m';
@@ -195,7 +204,7 @@ function input() {
     }
     let millis = Date.parse(arg);
     if (isNaN(millis)) {
-        console.log(`Invalid input! Usage:\nnode CalPuzzle.js YYYY/MM/DD`);
+        console.log('Invalid input! Usage:\nnode CalPuzzle.js YYYY/MM/DD [pieces to print]');
         process.exit();
     }
     let date = new Date(millis);
@@ -227,6 +236,15 @@ function input() {
     row = Math.floor(dow / COLS) + 7;
     col = dow % COLS;
     board[row][col] = barrier;
+
+    // number of pieces to print
+    if (process.argv.length > 3) {
+        printPieces = parseInt(process.argv[3]);
+        if (isNaN(printPieces)) {
+            printPieces = 9;
+        }
+        printPieces = Math.max(1, Math.min(9, printPieces));
+    }
 }
 
 function main() {
